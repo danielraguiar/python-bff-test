@@ -58,15 +58,22 @@ def test_user_route(client: TestClient, test_db, mock_token_response, mock_user_
 
         response = client.get("/user")
         assert response.status_code == 200
-        assert response.json()["message"] == "Hello, user!"
 
-        db = next(test_db())
-        users = db.query(UserData).all()
-        assert len(users) == 2
-        assert users[0].name == "John Doe"
-        assert users[0].email == "john@example.com"
-        assert users[0].item == "Laptop"
+        response_data = response.json()
 
+        assert "message" in response_data, f"Resposta não contém 'message': {response_data}"
+        assert response_data["message"] == "Hello, user!"
+
+        assert "data" in response_data, f"Resposta não contém 'data': {response_data}"
+        user_data = response_data["data"]
+        assert user_data["name"] == "John Doe"
+        assert user_data["email"] == "john@example.com"
+
+        assert "purchases" in user_data, f"Dados do usuário não contém 'purchases': {user_data}"
+        purchases = user_data["purchases"]
+        assert len(purchases) == 2
+        assert purchases[0] == {"id": 1, "item": "Laptop", "price": 2500}
+        assert purchases[1] == {"id": 2, "item": "Smartphone", "price": 1200}
 
 def test_admin_route(client: TestClient, test_db, mock_token_response, mock_admin_response):
     with patch("httpx.get") as mock_get:
@@ -75,11 +82,19 @@ def test_admin_route(client: TestClient, test_db, mock_token_response, mock_admi
 
         response = client.get("/admin")
         assert response.status_code == 200
-        assert response.json()["message"] == "Hello, admin!"
 
-        db = next(test_db())
-        admins = db.query(AdminData).all()
-        assert len(admins) == 2
-        assert admins[0].name == "Admin Master"
-        assert admins[0].email == "admin@example.com"
-        assert admins[0].title == "Monthly Sales"
+        response_data = response.json()
+
+        assert "message" in response_data, f"Resposta não contém 'message': {response_data}"
+        assert response_data["message"] == "Hello, admin!"
+
+        assert "data" in response_data, f"Resposta não contém 'data': {response_data}"
+        admin_data = response_data["data"]
+        assert admin_data["name"] == "Admin Master"
+        assert admin_data["email"] == "admin@example.com"
+
+        assert "reports" in admin_data, f"Dados do administrador não contém 'reports': {admin_data}"
+        reports = admin_data["reports"]
+        assert len(reports) == 2
+        assert reports[0] == {"id": 1, "title": "Monthly Sales", "status": "Completed"}
+        assert reports[1] == {"id": 2, "title": "User Activity", "status": "Pending"}
